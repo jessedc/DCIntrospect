@@ -16,10 +16,6 @@
 - (void)dealloc
 {
 	[[DCIntrospect sharedIntrospector] removeNamesForViewsInView:self.view];
-
-    [activityIndicator release];
-	[label release];
-    [super dealloc];
 }
 
 - (void)didReceiveMemoryWarning
@@ -66,7 +62,7 @@
 	UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
 	if (cell == nil)
 	{
-		cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier] autorelease];
+		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier];
 	}
 
 	cell.textLabel.text = [NSString stringWithFormat:@"Row %i", indexPath.row];
