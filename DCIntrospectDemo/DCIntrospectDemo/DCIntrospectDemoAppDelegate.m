@@ -17,7 +17,7 @@
 {
 	// create a custom tap gesture recognizer so introspection can be invoked from a device
 	// this one is a three finger double tap
-	UITapGestureRecognizer *defaultGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+	UITapGestureRecognizer *defaultGestureRecognizer = [[[UITapGestureRecognizer alloc] init] autorelease];
 	defaultGestureRecognizer.cancelsTouchesInView = NO;
 	defaultGestureRecognizer.delaysTouchesBegan = NO;
 	defaultGestureRecognizer.delaysTouchesEnded = NO;
@@ -29,6 +29,14 @@
 	[self.window makeKeyAndVisible];
 
 	return YES;
+}
+
+- (void)dealloc
+{
+	[window release];
+	[viewController release];
+
+	[super dealloc];
 }
 
 @end
