@@ -203,7 +203,7 @@
 		C918390F145A3462008BF5C0 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0420;
+				LastUpgradeCheck = 0430;
 			};
 			buildConfigurationList = C9183912145A3462008BF5C0 /* Build configuration list for PBXProject "DCIntrospect" */;
 			compatibilityVersion = "Xcode 3.2";

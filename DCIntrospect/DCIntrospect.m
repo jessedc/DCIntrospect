@@ -88,7 +88,7 @@ DCIntrospect *sharedInstance = nil;
 	if (simulatorRoot)
 	{
 		void *AppSupport = dlopen([[simulatorRoot stringByAppendingPathComponent:@"/System/Library/PrivateFrameworks/AppSupport.framework/AppSupport"] fileSystemRepresentation], RTLD_LAZY);
-		CFStringRef (*CPCopySharedResourcesPreferencesDomainForDomain)(CFStringRef domain) = dlsym(AppSupport, "CPCopySharedResourcesPreferencesDomainForDomain");
+		CFStringRef (*CPCopySharedResourcesPreferencesDomainForDomain)(CFStringRef domain) = (CFStringRef (*)())dlsym(AppSupport, "CPCopySharedResourcesPreferencesDomainForDomain");
 		if (CPCopySharedResourcesPreferencesDomainForDomain)
 		{
 			CFStringRef accessibilityDomain = CPCopySharedResourcesPreferencesDomainForDomain(CFSTR("com.apple.Accessibility"));
@@ -124,7 +124,7 @@ id UITextInputTraits_valueForKey(id self, SEL _cmd, NSString *key)
 		free(properties);
 	}
 	
-	IMP valueForKey = [objc_getAssociatedObject([self class], originalValueForKeyIMPKey) pointerValue];
+	IMP valueForKey = (IMP)[objc_getAssociatedObject([self class], originalValueForKeyIMPKey) pointerValue];
 	if ([textInputTraitsProperties containsObject:key])
 	{
 		id textInputTraits = valueForKey(self, _cmd, @"textInputTraits");
@@ -151,11 +151,11 @@ id UITextInputTraits_valueForKey(id self, SEL _cmd, NSString *key)
 		{
 			IMP originalValueForKey = class_replaceMethod(class, @selector(valueForKey:), (IMP)UITextInputTraits_valueForKey, valueForKeyTypeEncoding);
 			if (!originalValueForKey)
-				originalValueForKey = [objc_getAssociatedObject([class superclass], originalValueForKeyIMPKey) pointerValue];
+				originalValueForKey = (IMP)[objc_getAssociatedObject([class superclass], originalValueForKeyIMPKey) pointerValue];
 			if (!originalValueForKey)
 				originalValueForKey = class_getMethodImplementation([class superclass], @selector(valueForKey:));
 			
-			objc_setAssociatedObject(class, originalValueForKeyIMPKey, [NSValue valueWithPointer:originalValueForKey], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+			objc_setAssociatedObject(class, originalValueForKeyIMPKey, [NSValue valueWithPointer:(void *)originalValueForKey], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		}
 	}
 	free(classes);
@@ -222,6 +222,14 @@ id UITextInputTraits_valueForKey(id self, SEL _cmd, NSString *key)
 																	 afterDelay:0.1];
 												  }];
 	
+  // dirty hack for UIWebView keyboard problems
+  [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
+                                                    object:nil
+                                                     queue:nil
+                                                usingBlock:^(NSNotification *notification) {
+                                                  [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(takeFirstResponder) object:nil];
+                                                }];
+
 	// listen for device orientation changes to adjust the status bar
 	[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateViews) name:UIDeviceOrientationDidChangeNotification object:nil];
@@ -259,9 +267,9 @@ id UITextInputTraits_valueForKey(id self, SEL _cmd, NSString *key)
 	[mainWindow addGestureRecognizer:invokeGestureRecognizer];
 }
 
-- (void)setKeyboardBindingsOn:(BOOL)newKeyboardBindingsOn
+- (void)setKeyboardBindingsOn:(BOOL)areKeyboardBindingsOn
 {
-	keyboardBindingsOn = newKeyboardBindingsOn;
+	keyboardBindingsOn = areKeyboardBindingsOn;
 	if (self.keyboardBindingsOn)
 		[self.inputTextView becomeFirstResponder];
 	else
@@ -413,6 +421,15 @@ id UITextInputTraits_valueForKey(id self, SEL _cmd, NSString *key)
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)string
 {
+	if ([string isEqualToString:kDCIntrospectKeysDisableForPeriod])
+  {
+    [self setKeyboardBindingsOn:NO];
+    [[self inputTextView] resignFirstResponder];
+    NSLog(@"DCIntrospect: Disabled for %.1f seconds", kDCIntrospectTemporaryDisableDuration);
+    [self performSelector:@selector(setKeyboardBindingsOn:) withObject:[NSNumber numberWithFloat:YES] afterDelay:kDCIntrospectTemporaryDisableDuration];
+    return NO;
+  }
+
 	if ([string isEqualToString:kDCIntrospectKeysInvoke])
 	{
 		[self invokeIntrospector];
@@ -428,7 +445,7 @@ id UITextInputTraits_valueForKey(id self, SEL _cmd, NSString *key)
 		return NO;
 	}
 	
-	if ([string isEqualToString:kDCIntrospectKeysToggleViewOutlines])
+  if ([string isEqualToString:kDCIntrospectKeysToggleViewOutlines])
 	{
 		[self toggleOutlines];
 		return NO;

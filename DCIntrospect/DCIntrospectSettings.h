@@ -8,7 +8,8 @@
 #define kDCIntrospectFlashOnRedrawFlashLength 0.03f
 // UIColor
 #define kDCIntrospectOpaqueColor [UIColor redColor]
-
+// Seconds
+#define kDCIntrospectTemporaryDisableDuration 10. 
 //////////////////
 // Key Bindings //
 //////////////////
@@ -76,3 +77,5 @@
 
 // enters GDB
 #define kDCIntrospectKeysEnterGDB	@"`"
+// disables DCIntrospect for a given period (see kDCIntrospectTemporaryDisableDuration)
+#define kDCIntrospectKeysDisableForPeriod		@"~"
